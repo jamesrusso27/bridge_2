@@ -58,7 +58,7 @@ contract Destination is AccessControl {
         require(_recipient != address(0), "Recipient cannot be zero");
         require(_amount > 0, "Amount must be > 0");
 
-        BridgeToken(_wrapped_token).burn(_amount);
+        BridgeToken(_wrapped_token).burnFrom(msg.sender, _amount);
         emit Unwrap(underlying, _wrapped_token, msg.sender, _recipient, _amount);
     }
 
