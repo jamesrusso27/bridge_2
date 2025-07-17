@@ -22,17 +22,56 @@ contract Destination is AccessControl {
         _grantRole(WARDEN_ROLE, admin);
     }
 
-	function wrap(address _underlying_token, address _recipient, uint256 _amount ) public onlyRole(WARDEN_ROLE) {
-		//YOUR CODE HERE
-	}
+function wrap(
+    address _underlying_token,
+    address _recipient,
+    uint256 _amount
+) public onlyRole(WARDEN_ROLE) {
+    address wrapped = underlying_tokens[_underlying_token];
+    require(wrapped != address(0), "Token not registered");
+    require(_recipient != address(0), "Recipient cannot be zero");
+    require(_amount > 0, "Amount must be > 0");
 
-	function unwrap(address _wrapped_token, address _recipient, uint256 _amount ) public {
-		//YOUR CODE HERE
-	}
+    BridgeToken(wrapped).mint(_recipient, _amount);
+    emit Wrap(_underlying_token, wrapped, _recipient, _amount);
+}
 
-	function createToken(address _underlying_token, string memory name, string memory symbol ) public onlyRole(CREATOR_ROLE) returns(address) {
-		//YOUR CODE HERE
-	}
+function unwrap(
+    address _wrapped_token,
+    address _recipient,
+    uint256 _amount
+) public {
+    address underlying = wrapped_tokens[_wrapped_token];
+    require(underlying != address(0), "Wrapped token not recognized");
+    require(_amount > 0, "Amount must be > 0");
+
+    BridgeToken(_wrapped_token).burn(_amount);
+    emit Unwrap(underlying, _wrapped_token, msg.sender, _recipient, _amount);
+}
+
+function createToken(
+    address _underlying_token,
+    string memory name,
+    string memory symbol
+) public onlyRole(CREATOR_ROLE) returns (address) {
+    require(_underlying_token != address(0), "Underlying cannot be zero");
+    require(underlying_tokens[_underlying_token] == address(0), "Already registered");
+
+    BridgeToken token = new BridgeToken(
+        _underlying_token,
+        name,
+        symbol,
+        address(this)
+    );
+
+    underlying_tokens[_underlying_token] = address(token);
+    wrapped_tokens[address(token)] = _underlying_token;
+    tokens.push(_underlying_token);
+
+    emit Creation(_underlying_token, address(token));
+    return address(token);
+}
+
 
 }
 
