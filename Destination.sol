@@ -12,20 +12,9 @@ contract Destination is AccessControl {
     mapping(address => address) public underlying_tokens;
     address[] public tokens;
 
-    event Creation(address indexed underlying_token, address indexed wrapped_token);
-    event Wrap(
-        address indexed underlying_token,
-        address indexed wrapped_token,
-        address indexed to,
-        uint256 amount
-    );
-    event Unwrap(
-        address indexed underlying_token,
-        address indexed wrapped_token,
-        address frm,
-        address indexed to,
-        uint256 amount
-    );
+    event Creation(address indexed underlying_token, address wrapped_token);
+    event Wrap(address indexed underlying_token, address indexed wrapped_token, address indexed to, uint256 amount);
+    event Unwrap(address indexed underlying_token, address indexed wrapped_token, address frm, address indexed to, uint256 amount);
 
     constructor(address admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -33,11 +22,11 @@ contract Destination is AccessControl {
         _grantRole(WARDEN_ROLE, admin);
     }
 
-    function createToken(
-        address _underlying_token,
-        string memory name,
-        string memory symbol
-    ) public onlyRole(CREATOR_ROLE) returns (address) {
+    function createToken(address _underlying_token, string memory name, string memory symbol)
+        public
+        onlyRole(CREATOR_ROLE)
+        returns (address)
+    {
         require(_underlying_token != address(0), "Underlying cannot be zero");
         require(wrapped_tokens[_underlying_token] == address(0), "Already registered");
 
@@ -50,11 +39,10 @@ contract Destination is AccessControl {
         return address(token);
     }
 
-    function wrap(
-        address _underlying_token,
-        address _recipient,
-        uint256 _amount
-    ) public onlyRole(WARDEN_ROLE) {
+    function wrap(address _underlying_token, address _recipient, uint256 _amount)
+        public
+        onlyRole(WARDEN_ROLE)
+    {
         address wrapped = wrapped_tokens[_underlying_token];
         require(wrapped != address(0), "Token not registered");
         require(_recipient != address(0), "Recipient cannot be zero");
@@ -64,11 +52,7 @@ contract Destination is AccessControl {
         emit Wrap(_underlying_token, wrapped, _recipient, _amount);
     }
 
-    function unwrap(
-        address _wrapped_token,
-        address _recipient,
-        uint256 _amount
-    ) public {
+    function unwrap(address _wrapped_token, address _recipient, uint256 _amount) public {
         address underlying = underlying_tokens[_wrapped_token];
         require(underlying != address(0), "Wrapped token not recognized");
         require(_recipient != address(0), "Recipient cannot be zero");
