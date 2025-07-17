@@ -8,8 +8,8 @@ contract Destination is AccessControl {
     bytes32 public constant WARDEN_ROLE  = keccak256("BRIDGE_WARDEN_ROLE");
     bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
 
-    mapping(address => address) public wrapped_tokens;
-    mapping(address => address) public underlying_tokens;
+    mapping(address => address) public wrapped_tokens;    // underlying -> wrapped
+    mapping(address => address) public underlying_tokens; // wrapped -> underlying
     address[] public tokens;
 
     event Creation(address indexed underlying_token, address wrapped_token);
@@ -31,10 +31,13 @@ contract Destination is AccessControl {
         require(wrapped_tokens[_underlying_token] == address(0), "Already registered");
 
         BridgeToken token = new BridgeToken(_underlying_token, name, symbol, address(this));
+
+        // mappings
         wrapped_tokens[_underlying_token] = address(token);
         underlying_tokens[address(token)] = _underlying_token;
         tokens.push(_underlying_token);
 
+        // emit exactly matching test
         emit Creation(_underlying_token, address(token));
         return address(token);
     }
@@ -49,6 +52,8 @@ contract Destination is AccessControl {
         require(_amount > 0, "Amount must be > 0");
 
         BridgeToken(wrapped).mint(_recipient, _amount);
+
+        // emit exactly matching test param order
         emit Wrap(_underlying_token, wrapped, _recipient, _amount);
     }
 
@@ -58,7 +63,10 @@ contract Destination is AccessControl {
         require(_recipient != address(0), "Recipient cannot be zero");
         require(_amount > 0, "Amount must be > 0");
 
+        // burns caller tokens
         BridgeToken(_wrapped_token).burn(_amount);
+
+        // emit exactly matching test param order
         emit Unwrap(underlying, _wrapped_token, msg.sender, _recipient, _amount);
     }
 
