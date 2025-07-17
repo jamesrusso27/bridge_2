@@ -8,7 +8,6 @@ contract Destination is AccessControl {
     bytes32 public constant WARDEN_ROLE  = keccak256("BRIDGE_WARDEN_ROLE");
     bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
 
-    // underlying → wrapped, and wrapped → underlying
     mapping(address => address) public wrapped_tokens;
     mapping(address => address) public underlying_tokens;
     address[] public tokens;
@@ -20,19 +19,18 @@ contract Destination is AccessControl {
         address indexed to,
         uint256 amount
     );
-    // Now indexing: 1) underlying, 2) wrapped, 3) to
     event Unwrap(
         address indexed underlying_token,
         address indexed wrapped_token,
-        address from,
+        address frm,
         address indexed to,
         uint256 amount
     );
 
     constructor(address admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(CREATOR_ROLE,        admin);
-        _grantRole(WARDEN_ROLE,         admin);
+        _grantRole(CREATOR_ROLE, admin);
+        _grantRole(WARDEN_ROLE, admin);
     }
 
     function createToken(
@@ -45,7 +43,7 @@ contract Destination is AccessControl {
 
         BridgeToken token = new BridgeToken(_underlying_token, name, symbol, address(this));
         wrapped_tokens[_underlying_token] = address(token);
-        underlying_tokens[address(token)]    = _underlying_token;
+        underlying_tokens[address(token)] = _underlying_token;
         tokens.push(_underlying_token);
 
         emit Creation(_underlying_token, address(token));
@@ -58,9 +56,9 @@ contract Destination is AccessControl {
         uint256 _amount
     ) public onlyRole(WARDEN_ROLE) {
         address wrapped = wrapped_tokens[_underlying_token];
-        require(wrapped       != address(0), "Token not registered");
-        require(_recipient   != address(0), "Recipient cannot be zero");
-        require(_amount      >  0,           "Amount must be > 0");
+        require(wrapped != address(0), "Token not registered");
+        require(_recipient != address(0), "Recipient cannot be zero");
+        require(_amount > 0, "Amount must be > 0");
 
         BridgeToken(wrapped).mint(_recipient, _amount);
         emit Wrap(_underlying_token, wrapped, _recipient, _amount);
@@ -72,11 +70,10 @@ contract Destination is AccessControl {
         uint256 _amount
     ) public {
         address underlying = underlying_tokens[_wrapped_token];
-        require(underlying  != address(0), "Wrapped token not recognized");
-        require(_recipient  != address(0), "Recipient cannot be zero");
-        require(_amount     >  0,           "Amount must be > 0");
+        require(underlying != address(0), "Wrapped token not recognized");
+        require(_recipient != address(0), "Recipient cannot be zero");
+        require(_amount > 0, "Amount must be > 0");
 
-        // burn(amount) pulls from msg.sender
         BridgeToken(_wrapped_token).burn(_amount);
         emit Unwrap(underlying, _wrapped_token, msg.sender, _recipient, _amount);
     }
